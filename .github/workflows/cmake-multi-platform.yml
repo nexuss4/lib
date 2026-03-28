@@ -37,10 +37,14 @@ jobs:
           source emsdk/emsdk_env.sh
           cmake --build build
 
+      - name: List build output
+        run: |
+          find build -type f
+
       - name: Upload WASM
         uses: actions/upload-artifact@v4
         with:
           name: WASM-Emscripten_Release
           path: |
-            build/*.wasm
-            build/*.js
+            build/**/*.wasm
+            build/**/*.js
