@@ -29,3 +29,25 @@ target_include_directories(bio
 
 # Optional: define export macro if you use one
 target_compile_definitions(bio PRIVATE BIO_BUILD)
+
+if (CMAKE_SYSTEM_NAME STREQUAL "Emscripten")
+
+    add_executable(LCE_wasm
+        src/bindings/EmscriptenBindings.cpp
+    )
+
+    target_link_libraries(LCE_wasm PRIVATE LCE)
+
+    set_target_properties(LCE_wasm PROPERTIES
+        OUTPUT_NAME "LCE"
+        SUFFIX ".js"
+    )
+
+    target_link_options(LCE_wasm PRIVATE
+        "-sMODULARIZE=1"
+        "-sEXPORT_ES6=1"
+        "-sALLOW_MEMORY_GROWTH=1"
+        "-sEXPORTED_RUNTIME_METHODS=['ccall','cwrap']"
+    )
+
+endif()
