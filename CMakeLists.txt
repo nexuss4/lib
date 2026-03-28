@@ -26,7 +26,7 @@ target_compile_definitions(bio PUBLIC
 )
 
 # 🔥 WASM executable
-add_executable(bio_wasm src/main.cpp)
+add_executable(bio_wasm wasm/main.cpp)
 
 # ✅ Force include entire library
 target_link_libraries(bio_wasm PRIVATE
