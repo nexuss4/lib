@@ -3,14 +3,13 @@ project(BIO)
 
 set(CMAKE_CXX_STANDARD 17)
 
-# 🔍 Get all source files
+# 🔍 Source files
 file(GLOB_RECURSE BIO_SOURCES src/*.cpp)
 file(GLOB_RECURSE BIO_HEADERS include/*.h)
 
-# Debug (you can remove later)
 message(STATUS "BIO SOURCES: ${BIO_SOURCES}")
 
-# 🔹 Build library
+# 🔹 Library
 add_library(bio STATIC ${BIO_SOURCES} ${BIO_HEADERS})
 
 target_include_directories(bio
@@ -25,26 +24,26 @@ target_compile_definitions(bio PUBLIC
     BIO_VERSION="1.0.0"
 )
 
-# 🔥 WASM executable
+# 🔥 WASM executable (MAKE SURE THIS FILE EXISTS)
 add_executable(bio_wasm wasm/main.cpp)
 
-# ✅ Force include entire library
-target_link_libraries(bio_wasm PRIVATE
-    "-Wl,--whole-archive"
-    bio
-    "-Wl,--no-whole-archive"
-)
-
-# ⚙️ Emscripten settings
-if(EMSCRIPTEN)
-    set_target_properties(bio_wasm PROPERTIES SUFFIX ".js")
-
+# ✅ Link library normally
 target_link_libraries(bio_wasm PRIVATE bio)
 
+# ⚙️ Emscripten settings (PROPERLY CLOSED BLOCK)
 if(EMSCRIPTEN)
+
+    set_target_properties(bio_wasm PROPERTIES SUFFIX ".js")
+
     target_link_options(bio_wasm PRIVATE
+        "-sWASM=1"
+        "-sALLOW_MEMORY_GROWTH=1"
+        "-sEXPORTED_FUNCTIONS=['_main']"
+        "-sEXPORTED_RUNTIME_METHODS=['ccall','cwrap']"
+        "-sNO_EXIT_RUNTIME=1"
         "-Wl,--whole-archive"
         "$<TARGET_FILE:bio>"
         "-Wl,--no-whole-archive"
     )
+
 endif()
