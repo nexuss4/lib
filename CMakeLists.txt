@@ -112,7 +112,6 @@ if (CMAKE_SYSTEM_NAME STREQUAL "Emscripten")
     set(ENVIRONMENT_TYPE "Emscripten")
     # weird?
     set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -sNO_DISABLE_EXCEPTION_CATCHING -s USE_ZLIB=1 -s WASM_BIGINT -s MODULARIZE=1 -sEXPORT_ES6=1 -s EXPORT_ALL=1 -s EXPORTED_RUNTIME_METHODS=['ccall','cwrap','getValue','setValue'] -s EXPORTED_FUNCTIONS=['_malloc'] -s ALLOW_MEMORY_GROWTH=1")
-    add_executable(LCE ${HEADERS} ${FILES} ${LODEPNG_FILES})
     target_include_directories(LCE PUBLIC include)
     #    target_link_options(LCE PRIVATE --emit-tsd libLCE.d.ts)
 else ()
