@@ -1,6 +1,6 @@
 #include <filesystem>
 
-#include "LCE/libLCEExports.h"
+#include "libLCEExports.h"
 #include <BinaryIO/Exports.h>
 
 #include "tests/formats.h"
