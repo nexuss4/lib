@@ -22,25 +22,27 @@ jobs:
           ./emsdk install latest
           ./emsdk activate latest
 
-      - name: Configure CMake
+      # ✅ Persist env for ALL steps
+      - name: Add Emscripten to PATH
+        run: echo "$PWD/emsdk/upstream/emscripten" >> $GITHUB_PATH
+
+      # ✅ Proper configure using emcmake
+      - name: Configure
         run: |
           source emsdk/emsdk_env.sh
-          cmake -B build \
-            -DCMAKE_BUILD_TYPE=Release \
-            -DCMAKE_TOOLCHAIN_FILE=emsdk/upstream/emscripten/cmake/Modules/Platform/Emscripten.cmake \
-            -DCMAKE_C_COMPILER=emcc \
-            -DCMAKE_CXX_COMPILER=em++ \
-            -DCMAKE_EXE_LINKER_FLAGS="--bind"
+          emcmake cmake -B build -DCMAKE_BUILD_TYPE=Release
 
+      # ✅ Build
       - name: Build
         run: |
           source emsdk/emsdk_env.sh
           cmake --build build
 
+      # 🔍 Debug output (VERY useful)
       - name: List build output
-        run: |
-          find build -type f
+        run: find build -type f
 
+      # ✅ Upload artifacts
       - name: Upload WASM
         uses: actions/upload-artifact@v4
         with:
