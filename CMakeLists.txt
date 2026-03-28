@@ -25,13 +25,11 @@ target_compile_definitions(bio PUBLIC
     BIO_VERSION="1.0.0"
 )
 
-# 🔥 WASM executable (THIS creates .wasm)
+# 🔥 WASM executable
 add_executable(bio_wasm src/main.cpp)
 
-target_link_libraries(bio_wasm PRIVATE bio)
-
-# 🚨 FORCE include ALL library code (prevents 1KB wasm)
-target_link_options(bio_wasm PRIVATE
+# ✅ Force include entire library
+target_link_libraries(bio_wasm PRIVATE
     "-Wl,--whole-archive"
     bio
     "-Wl,--no-whole-archive"
