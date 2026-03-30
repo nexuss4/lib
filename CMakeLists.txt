@@ -4,23 +4,20 @@ project(BIO)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-# 🔍 Sources
+# 🔥 GLOBAL include fix
+include_directories(
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+    ${CMAKE_CURRENT_SOURCE_DIR}/src
+    ${CMAKE_CURRENT_SOURCE_DIR}
+)
+
 file(GLOB_RECURSE BIO_SOURCES src/*.cpp)
 file(GLOB_RECURSE BIO_HEADERS include/*.h)
 
 list(FILTER BIO_SOURCES EXCLUDE REGEX ".*main.cpp$")
 
-# 🔹 Library
 add_library(bio STATIC ${BIO_SOURCES} ${BIO_HEADERS})
 
-# 🔥 CRITICAL: expose BOTH include roots
-target_include_directories(bio PUBLIC
-    ${CMAKE_CURRENT_SOURCE_DIR}/include
-    ${CMAKE_CURRENT_SOURCE_DIR}/include/LCE
-    ${CMAKE_CURRENT_SOURCE_DIR}/include/BinaryIO
-)
-
-# 🔹 Defines
 target_compile_definitions(bio PUBLIC
     BIO_BUILD_TYPE="${CMAKE_BUILD_TYPE}"
     BIO_COMPILER_NAME="${CMAKE_CXX_COMPILER_ID}"
@@ -29,20 +26,10 @@ target_compile_definitions(bio PUBLIC
     BIO_VERSION="1.0.0"
 )
 
-# 🔥 WASM executable
 add_executable(bio_wasm wasm/main.cpp)
 
-# 🔥 SAME include fix for executable
-target_include_directories(bio_wasm PRIVATE
-    ${CMAKE_CURRENT_SOURCE_DIR}/include
-    ${CMAKE_CURRENT_SOURCE_DIR}/include/LCE
-    ${CMAKE_CURRENT_SOURCE_DIR}/include/BinaryIO
-)
-
-# ✅ Proper linking
 target_link_libraries(bio_wasm PRIVATE bio)
 
-# ⚙️ Emscripten config
 if(EMSCRIPTEN)
     set_target_properties(bio_wasm PROPERTIES SUFFIX ".js")
 

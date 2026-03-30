@@ -4,7 +4,7 @@
 #include <emscripten/emscripten.h>
 #endif
 
-// 🔥 SAFE includes (work with your structure now)
+// 🔥 THIS WILL NOW WORK because we exposed src + root
 #include "libLCEExports.h"
 #include <BinaryIO/Exports.h>
 
@@ -28,7 +28,6 @@ int main(int argc, char **argv) {
     std::cout << "[WASM] filesystem disabled\n";
 #endif
 
-    // 🔥 IMPORTANT: keeps code from being stripped
     ADD_TESTS(RUN_FORMATS_TESTS, lce::tests::formats::run);
     ADD_TESTS(RUN_VFS_TESTS, lce::tests::vfs::run);
 
