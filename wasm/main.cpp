@@ -1,20 +1,19 @@
 #include <iostream>
 
 #ifdef __EMSCRIPTEN__
-    #include <emscripten/emscripten.h>
+#include <emscripten/emscripten.h>
 #endif
 
-// 🔥 FIXED includes (important)
-#include <LCE/libLCEExports.h>
+// 🔥 SAFE includes (work with your structure now)
+#include "libLCEExports.h"
 #include <BinaryIO/Exports.h>
 
 #include "tests/formats.h"
 #include "tests/vfs.h"
 #include <util.h>
 
-// ⚠️ filesystem is limited in WASM
 #ifndef __EMSCRIPTEN__
-    #include <filesystem>
+#include <filesystem>
 #endif
 
 int main(int argc, char **argv) {
@@ -26,16 +25,12 @@ int main(int argc, char **argv) {
     std::filesystem::create_directories(lce::tests::util::examples);
     std::filesystem::create_directories(lce::tests::util::output);
 #else
-    std::cout << "[WASM] Skipping filesystem directory creation\n";
+    std::cout << "[WASM] filesystem disabled\n";
 #endif
 
-    // 🔥 KEEP TESTS (prevents dead-code stripping)
+    // 🔥 IMPORTANT: keeps code from being stripped
     ADD_TESTS(RUN_FORMATS_TESTS, lce::tests::formats::run);
     ADD_TESTS(RUN_VFS_TESTS, lce::tests::vfs::run);
-
-#ifdef __EMSCRIPTEN__
-    std::cout << "[WASM] Execution complete\n";
-#endif
 
     return 0;
 }

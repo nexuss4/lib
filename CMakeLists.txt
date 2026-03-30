@@ -4,20 +4,23 @@ project(BIO)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-# 🔍 Collect sources
+# 🔍 Sources
 file(GLOB_RECURSE BIO_SOURCES src/*.cpp)
 file(GLOB_RECURSE BIO_HEADERS include/*.h)
 
-# ❌ Remove accidental mains
 list(FILTER BIO_SOURCES EXCLUDE REGEX ".*main.cpp$")
 
-# 🔹 Static library
+# 🔹 Library
 add_library(bio STATIC ${BIO_SOURCES} ${BIO_HEADERS})
 
+# 🔥 CRITICAL: expose BOTH include roots
 target_include_directories(bio PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}/include
+    ${CMAKE_CURRENT_SOURCE_DIR}/include/LCE
+    ${CMAKE_CURRENT_SOURCE_DIR}/include/BinaryIO
 )
 
+# 🔹 Defines
 target_compile_definitions(bio PUBLIC
     BIO_BUILD_TYPE="${CMAKE_BUILD_TYPE}"
     BIO_COMPILER_NAME="${CMAKE_CXX_COMPILER_ID}"
@@ -29,17 +32,18 @@ target_compile_definitions(bio PUBLIC
 # 🔥 WASM executable
 add_executable(bio_wasm wasm/main.cpp)
 
-# ✅ FIX: ensure headers are found
+# 🔥 SAME include fix for executable
 target_include_directories(bio_wasm PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/include
+    ${CMAKE_CURRENT_SOURCE_DIR}/include/LCE
+    ${CMAKE_CURRENT_SOURCE_DIR}/include/BinaryIO
 )
 
-# ✅ Proper linking (NO whole-archive nonsense)
+# ✅ Proper linking
 target_link_libraries(bio_wasm PRIVATE bio)
 
 # ⚙️ Emscripten config
 if(EMSCRIPTEN)
-
     set_target_properties(bio_wasm PROPERTIES SUFFIX ".js")
 
     target_link_options(bio_wasm PRIVATE
@@ -50,5 +54,4 @@ if(EMSCRIPTEN)
         "-sEXPORTED_FUNCTIONS=['_main']"
         "-sEXPORTED_RUNTIME_METHODS=['ccall','cwrap']"
     )
-
 endif()
