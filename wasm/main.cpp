@@ -4,7 +4,6 @@
 #include <emscripten/emscripten.h>
 #endif
 
-#include <LCE/libLCEExports.h>
 #include <BinaryIO/Exports.h>
 
 #include "tests/formats.h"
@@ -18,7 +17,6 @@
 int main(int argc, char **argv) {
 
     std::cout << bio::bio_get_library_string() << std::endl;
-    std::cout << lce::lce_get_library_string() << std::endl;
 
 #ifndef __EMSCRIPTEN__
     std::filesystem::create_directories(lce::tests::util::examples);
