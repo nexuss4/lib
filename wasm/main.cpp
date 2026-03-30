@@ -4,8 +4,7 @@
 #include <emscripten/emscripten.h>
 #endif
 
-// 🔥 THIS WILL NOW WORK because we exposed src + root
-#include "libLCEExports.h"
+#include <LCE/libLCEExports.h>
 #include <BinaryIO/Exports.h>
 
 #include "tests/formats.h"
@@ -24,8 +23,6 @@ int main(int argc, char **argv) {
 #ifndef __EMSCRIPTEN__
     std::filesystem::create_directories(lce::tests::util::examples);
     std::filesystem::create_directories(lce::tests::util::output);
-#else
-    std::cout << "[WASM] filesystem disabled\n";
 #endif
 
     ADD_TESTS(RUN_FORMATS_TESTS, lce::tests::formats::run);
