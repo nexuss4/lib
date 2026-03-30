@@ -2,7 +2,7 @@ name: Build WASM
 
 on:
   push:
-    branches: [ "main" ]
+    branches: ["main"]
   workflow_dispatch:
 
 jobs:
@@ -22,27 +22,22 @@ jobs:
           ./emsdk install latest
           ./emsdk activate latest
 
-      # ✅ Persist env for ALL steps
       - name: Add Emscripten to PATH
-        run: echo "$PWD/emsdk/upstream/emscripten" >> $GITHUB_PATH
+        run: echo "$GITHUB_WORKSPACE/emsdk/upstream/emscripten" >> $GITHUB_PATH
 
-      # ✅ Proper configure using emcmake
       - name: Configure
         run: |
-          source emsdk/emsdk_env.sh
+          source ./emsdk/emsdk_env.sh
           emcmake cmake -B build -DCMAKE_BUILD_TYPE=Release
 
-      # ✅ Build
       - name: Build
         run: |
-          source emsdk/emsdk_env.sh
-          cmake --build build
+          source ./emsdk/emsdk_env.sh
+          cmake --build build -j
 
-      # 🔍 Debug output (VERY useful)
       - name: List build output
         run: find build -type f
 
-      # ✅ Upload artifacts
       - name: Upload WASM
         uses: actions/upload-artifact@v4
         with:
