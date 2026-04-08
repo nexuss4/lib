@@ -1,0 +1,61 @@
+//
+// Created by Boreal on 05/15/2025.
+//
+
+#include <Localization/Language.h>
+
+namespace lce::loc {
+
+    Language::Language(io::BinaryIO &io) {
+        shouldReadByte = io.readBE<uint32_t>();
+
+        if (shouldReadByte > 0)
+            byte = io.readByte();
+
+        code = io.readString(io.readBE<uint16_t>());
+        stringCount = io.readBE<uint32_t>();
+
+        for (int s = 0; s < stringCount; s++) {
+            const uint32_t stringSize = io.readBE<uint16_t>();
+            strings.push_back(io.readString(stringSize));
+        }
+    }
+
+    size_t Language::getSize() const {
+        uint32_t size = 0;
+
+        size += sizeof(shouldReadByte);
+        if (shouldReadByte > 0)
+            size += sizeof(byte);
+        size += sizeof(uint16_t) + code.size();
+        size += sizeof(stringCount);
+
+        for (const auto &string : this->strings) {
+            size += sizeof(uint16_t) + string.size();
+        }
+
+        return size;
+    }
+
+    uint8_t *Language::serialize() const {
+        const uint32_t fileSize = this->getSize();
+        uint8_t *data = new uint8_t[fileSize];
+        io::BinaryIO io(data);
+
+        io.writeBE<uint32_t>(shouldReadByte);
+        if (shouldReadByte > 0)
+            io.writeByte(byte);
+
+        io.writeBE<uint16_t>(code.size());
+        io.writeString(code);
+
+        io.writeBE<uint32_t>(stringCount);
+
+        for (const auto &string : this->strings) {
+            io.writeBE<uint16_t>(string.size());
+            io.writeString(string);
+        }
+
+        return io.getData();
+    }
+} // namespace lce::loc
