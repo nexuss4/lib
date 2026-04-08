@@ -1,47 +1,161 @@
-cmake_minimum_required(VERSION 3.16)
-project(BIO)
+cmake_minimum_required(VERSION 3.26)
+project(LCE VERSION 1.2.4)
 
 set(CMAKE_CXX_STANDARD 17)
 
-file(GLOB_RECURSE BIO_SOURCES src/*.cpp)
-file(GLOB_RECURSE BIO_HEADERS include/*.h)
+add_definitions(-DCOMPILER_NAME="${CMAKE_CXX_COMPILER_ID}")
+add_definitions(-DPLATFORM_NAME="${CMAKE_SYSTEM_NAME}")
+add_definitions(-DPLATFORM_ARCH="${CMAKE_SYSTEM_PROCESSOR}")
 
-# ❌ Remove main.cpp from library
-list(FILTER BIO_SOURCES EXCLUDE REGEX ".*main.cpp$")
+message(STATUS "${CMAKE_SYSTEM_PROCESSOR}")
 
-# 🔥 Handle problematic file correctly
-if(EMSCRIPTEN)
-    list(FILTER BIO_SOURCES EXCLUDE REGEX ".*StringConverter.cpp$")
-    list(APPEND BIO_SOURCES src/util/string/StringConverter_stub.cpp)
-endif()
+include_directories(include external)
 
-add_library(bio STATIC ${BIO_SOURCES} ${BIO_HEADERS})
+# because _DEBUG is not universal
+if (CMAKE_BUILD_TYPE STREQUAL "Debug")
+    add_definitions(-DCMAKE_BUILD_DEBUG)
+endif ()
 
-target_include_directories(bio PUBLIC
-    ${CMAKE_CURRENT_SOURCE_DIR}/include
+include_directories(external/emsdk/upstream/emscripten/system/include)
+link_directories(external/emsdk/upstream/emscripten/system/lib)
+
+set(LODEPNG_FILES
+        external/lodepng/lodepng.h
+        external/lodepng/lodepng.cpp
+        external/lodepng/lodepng_util.h
+        external/lodepng/lodepng_util.cpp)
+
+set(ZLIB_FILES
+        external/zlib/zlib.h
+        external/zlib/inflate.h
+        external/zlib/inflate.c
+        external/zlib/adler32.c
+        external/zlib/crc32.c
+        external/zlib/zutil.c
+        external/zlib/inffast.c
+        external/zlib/inftrees.c
 )
 
-# 🔥 ✅ ADD THIS BACK (CRITICAL FIX)
-target_compile_definitions(bio PUBLIC
-    BIO_BUILD_TYPE="${CMAKE_BUILD_TYPE}"
-    BIO_COMPILER_NAME="${CMAKE_CXX_COMPILER_ID}"
-    BIO_PLATFORM_NAME="${CMAKE_SYSTEM_NAME}"
-    BIO_PLATFORM_ARCH="${CMAKE_SYSTEM_PROCESSOR}"
-    BIO_VERSION="1.0.0"
+set(HEADERS
+        include/Resources/resource.h
+        include/Resources/resource.rc
+
+        include/libLCE.h
+        include/libLCEExports.h
+        include/World/Region.h
+        include/World/Chunk.h
+        include/Save/SaveFile.h
+        include/Save/SaveFileOld.h
+        include/Save/SaveFileCommons.h
+        include/IO/BinaryIO.h
+        include/Filesystem/Filesystem.h
+        include/Filesystem/File.h
+        include/Archive/Archive.h
+        include/Color/Color.h
+        include/Color/ColorFile.h
+        include/Localization/LocalizationFile.h
+        include/Localization/Language.h
+        include/Soundbank/Soundbank.h
+        include/Soundbank/BinkaFile.h
+        include/Compression/Compression.h
+        include/Save/Thumb.h
+        include/World/SplitSave.h
+        include/World/Block.h
+        include/Filesystem/FSObject.h
+        include/Filesystem/Directory.h
+        include/Bindings/EmscriptenBindings.h
+        include/IO/Serializable.h
 )
 
-add_executable(bio_wasm wasm/main.cpp)
+set(FILES
+        src/libLCEExports.cpp
+        src/Bindings/EmscriptenBindings.cpp
+        src/World/Region.cpp
+        src/World/Chunk.cpp
+        src/Save/SaveFile.cpp
+        src/IO/BinaryIO.cpp
+        src/Filesystem/Filesystem.cpp
+        src/Archive/Archive.cpp
+        src/Color/Colors/Color.cpp
+        src/Color/Colors/WorldColor.cpp
+        src/Color/ColorFile.cpp
+        src/Color/ColorFileOld.cpp
+        src/Localization/LocalizationFile.cpp
+        src/Localization/Language.cpp
+        src/Soundbank/Soundbank.cpp
+        src/Save/SaveFileOld.cpp
+        src/Save/SaveFileCommons.cpp
+        src/IO/BinaryString.cpp
+        src/Compression/Compression.cpp
+        src/Save/Thumb.cpp
+        src/World/SplitSave.cpp
+        src/World/Block.cpp
+        src/World/Chunk/V12.cpp
+        src/Filesystem/FSObject.cpp
+        src/Filesystem/File.cpp
+        src/Filesystem/Directory.cpp
+        src/IO/Serializable.cpp
+)
 
-target_link_libraries(bio_wasm PRIVATE bio)
+option(ENABLE_OPTIMIZATIONS "Enable compiler optimizations" OFF)
 
-if(EMSCRIPTEN)
-    set_target_properties(bio_wasm PROPERTIES SUFFIX ".js")
+if (CMAKE_SYSTEM_NAME STREQUAL "Emscripten")
+    set(ENVIRONMENT_TYPE "Emscripten")
+    # weird?
+    set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -sNO_DISABLE_EXCEPTION_CATCHING -s USE_ZLIB=1 -s WASM_BIGINT -s MODULARIZE=1 -sEXPORT_ES6=1 -s EXPORT_ALL=1 -s EXPORTED_RUNTIME_METHODS=['ccall','cwrap','getValue','setValue'] -s EXPORTED_FUNCTIONS=['_malloc'] -s ALLOW_MEMORY_GROWTH=1")
+    add_executable(LCE ${HEADERS} ${FILES} ${LODEPNG_FILES})
+    #    target_link_options(LCE PRIVATE --emit-tsd libLCE.d.ts)
+else ()
+    if (ENABLE_OPTIMIZATIONS STREQUAL "ON")
+        add_compile_options(
+                "$<$<COMPILE_LANGUAGE:CXX>:-O3;-ffast-math;-march=native;-fpic;-ftree-vectorize>"
+        )
+    endif ()
+    unset(ENABLE_OPTIMIZATIONS CACHE)
 
-    target_link_options(bio_wasm PRIVATE
-        "-sWASM=1"
-        "-sALLOW_MEMORY_GROWTH=1"
-        "-sNO_EXIT_RUNTIME=1"
-        "-sEXPORTED_FUNCTIONS=['_main']"
-        "-sEXPORTED_RUNTIME_METHODS=['ccall','cwrap']"
+    set(ENVIRONMENT_TYPE "Native")
+    set(LIB_TYPE SHARED)
+    add_library(LCE ${LIB_TYPE} ${HEADERS} ${FILES} ${LODEPNG_FILES} ${ZLIB_FILES})
+
+    target_include_directories(LCE PUBLIC "include" "src")
+    target_compile_definitions(LCE PRIVATE LIBLCE_EXPORTS)
+
+    add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/tests EXCLUDE_FROM_ALL)
+endif ()
+
+# me: "why don't we use c++20 for std::endian?"
+# them: "c++20 is in my nightmares"
+
+#set endianness define
+if (CMAKE_CXX_BYTE_ORDER EQUAL BIG_ENDIAN)
+    target_compile_definitions(LCE PRIVATE BR_BIG_ENDIAN)
+endif ()
+
+target_compile_definitions(LCE PRIVATE
+        LIBLCE_VERSION="${PROJECT_VERSION}"
+        LIBLCE_RC_VERSION=${PROJECT_VERSION_MAJOR},${PROJECT_VERSION_MINOR},${PROJECT_VERSION_PATCH}
+)
+
+# https://github.com/jothepro/doxygen-awesome-css?tab=readme-ov-file#cmake-with-fetchcontent
+include(FetchContent)
+FetchContent_Declare(
+        doxygen-awesome-css
+        URL https://github.com/jothepro/doxygen-awesome-css/archive/refs/heads/main.zip
+)
+FetchContent_MakeAvailable(doxygen-awesome-css)
+
+FetchContent_GetProperties(doxygen-awesome-css SOURCE_DIR AWESOME_CSS_DIR)
+
+FIND_PACKAGE(Doxygen)
+IF (DOXYGEN_FOUND)
+    set(DOXYFILE_IN ${CMAKE_CURRENT_SOURCE_DIR}/docs/Doxyfile.in)
+    set(DOXYFILE_OUT ${CMAKE_CURRENT_BINARY_DIR}/Doxyfile)
+
+    CONFIGURE_FILE(${DOXYFILE_IN} ${DOXYFILE_OUT} @ONLY)
+
+    ADD_CUSTOM_TARGET(docs
+            COMMAND ${DOXYGEN_EXECUTABLE} ${DOXYGEN_OUT}
+            WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+            VERBATIM
     )
-endif()
+ENDIF ()
